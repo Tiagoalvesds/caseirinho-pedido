@@ -914,10 +914,10 @@
 
       if (prato.tipoVenda === 'especial') {
         // Nome do prato especial pode ser longo — fica sozinho na linha,
-        // tamanho e preço na linha de baixo (igual ao modelo aprovado).
+        // com o [ ] junto (é um item só, sem componentes pra desmembrar).
         const topo = document.createElement('div');
         topo.className = 'recibo-item-topo';
-        topo.innerHTML = `<span>${prato.pratoEspecialNome}</span>`;
+        topo.innerHTML = `<span>[ ] ${prato.pratoEspecialNome}</span>`;
         item.appendChild(topo);
 
         const tamanhoPreco = document.createElement('div');
@@ -930,12 +930,13 @@
         topo.innerHTML = `<span>${descricaoTipoVenda(prato)}</span><span>R$ ${prato.preco.toFixed(2).replace('.', ',')}</span>`;
         item.appendChild(topo);
 
-        if (prato.componentes.length > 0) {
-          const sub = document.createElement('div');
-          sub.className = 'recibo-item-sub';
-          sub.textContent = prato.componentes.map(c => c.nome).join(', ');
-          item.appendChild(sub);
-        }
+        // Cada componente vira sua própria linha com [ ], pra cozinha marcar um por um.
+        prato.componentes.forEach(c => {
+          const linhaComponente = document.createElement('div');
+          linhaComponente.className = 'recibo-item-sub';
+          linhaComponente.textContent = '[ ] ' + c.nome;
+          item.appendChild(linhaComponente);
+        });
       }
 
       if (prato.observacao) {
