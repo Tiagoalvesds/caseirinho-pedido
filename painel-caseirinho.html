@@ -589,6 +589,79 @@
   button.salvar-pequeno:active { transform: translateY(0) scale(0.98); }
   button.salvar-pequeno:disabled { opacity: 0.6; cursor: default; transform: none; }
 
+  /* ---- produtos avulsos (bebidas, sorvetes, doces) ---- */
+
+  .linha-preco-avulso {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .preco-avulso-prefixo {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    color: var(--amber-600);
+    font-size: 13.5px;
+  }
+
+  .preco-avulso-input {
+    width: 76px;
+    padding: 7px 9px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: var(--creme-50);
+    text-align: right;
+    transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
+  }
+
+  .preco-avulso-input:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    background: var(--creme-0);
+  }
+
+  .linha-adicionar-item-avulso {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 4px 4px;
+    margin-top: 4px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .linha-adicionar-item-avulso input[type="text"] {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--creme-50);
+    color: var(--ink);
+  }
+
+  .linha-adicionar-item-avulso input[type="number"] {
+    width: 80px;
+    padding: 9px 10px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--creme-50);
+    color: var(--ink);
+    text-align: right;
+  }
+
+  .linha-adicionar-item-avulso input:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    background: var(--creme-0);
+  }
+
   /* ---- cardápio semanal ---- */
 
   .categoria-card {
@@ -855,6 +928,15 @@
     <div id="cardapio-container"><span class="carregando">Carregando cardápio…</span></div>
   </section>
 
+  <div class="divisor-pontos"><span></span><span></span><span></span></div>
+
+  <section>
+    <div class="eyebrow">Sempre disponível · preço por item</div>
+    <h2>Bebidas, sorvetes e doces</h2>
+    <p class="desc">Diferente do cardápio da semana, esses itens não dependem do dia — ficam sempre à venda, cada um com seu próprio preço. Toque em "Ativo/Pausado" pra tirar um item temporariamente, ou "−" pra excluir de vez.</p>
+    <div id="avulsos-container"><span class="carregando">Carregando produtos…</span></div>
+  </section>
+
 </main>
 
 <div id="toast"></div>
@@ -862,7 +944,7 @@
 <script>
   const DIAS = ['dom','seg','ter','qua','qui','sex','sab'];
   const DIAS_LABEL = { dom:'Dom', seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb' };
-  const CATEGORIA_LABEL = { proteina:'Pratos principais', massa:'Massas', acompanhamento:'Acompanhamentos', extra:'Extras' };
+  const CATEGORIA_LABEL = { proteina:'Proteínas', massa:'Massas', acompanhamento:'Acompanhamentos', extra:'Extras' };
   const CATEGORIA_ICONE = { proteina:'🍖', massa:'🍝', acompanhamento:'🥗', extra:'🍌' };
   const CATEGORIA_ORDEM = ['proteina','massa','acompanhamento','extra'];
 
@@ -929,6 +1011,7 @@
     carregarPrecos();
     carregarPratosEspeciais();
     carregarCardapio();
+    carregarProdutosAvulsos();
   }
 
   document.getElementById('login-senha').addEventListener('keyup', (e) => {
@@ -1150,6 +1233,182 @@
       carregarCardapio();
     } catch (err) {
       mostrarToast('Erro ao excluir: ' + err.message, true);
+    }
+  }
+
+  // ===== PRODUTOS AVULSOS (bebidas, sorvetes, doces) =====
+
+  async function carregarProdutosAvulsos() {
+    const container = document.getElementById('avulsos-container');
+    const { data, error } = await sb
+      .from('produtos_avulsos')
+      .select('id,categoria,nome,preco,ativo,ordem_categoria,ordem_item')
+      .order('ordem_categoria')
+      .order('ordem_item');
+
+    if (error) {
+      container.innerHTML = '<p style="color:var(--alert)">Erro ao carregar produtos: ' + error.message + '</p>';
+      return;
+    }
+
+    container.innerHTML = '';
+
+    // Agrupa mantendo a ordem em que cada categoria apareceu nos dados
+    const categoriasNaOrdem = [];
+    const porCategoria = {};
+    data.forEach(item => {
+      if (!porCategoria[item.categoria]) {
+        porCategoria[item.categoria] = [];
+        categoriasNaOrdem.push(item.categoria);
+      }
+      porCategoria[item.categoria].push(item);
+    });
+
+    categoriasNaOrdem.forEach(categoria => {
+      const card = document.createElement('div');
+      card.className = 'categoria-card';
+
+      const titulo = document.createElement('div');
+      titulo.className = 'categoria-titulo';
+      titulo.textContent = categoria;
+      card.appendChild(titulo);
+
+      porCategoria[categoria].forEach(item => {
+        const linha = document.createElement('div');
+        linha.className = 'linha-item' + (item.ativo ? '' : ' inativo');
+        linha.id = 'avulso-linha-' + item.id;
+
+        const nome = document.createElement('div');
+        nome.className = 'nome-item';
+        nome.textContent = item.nome;
+        linha.appendChild(nome);
+
+        const precoWrap = document.createElement('div');
+        precoWrap.className = 'linha-preco-avulso';
+        precoWrap.innerHTML = `
+          <span class="preco-avulso-prefixo">R$</span>
+          <input type="number" step="0.01" class="preco-avulso-input" id="avulso-preco-${item.id}" value="${item.preco}" />
+        `;
+        linha.appendChild(precoWrap);
+
+        const toggleWrap = document.createElement('div');
+        toggleWrap.className = 'toggle-wrap';
+        toggleWrap.innerHTML = `
+          <span class="toggle-label" id="avulso-toggle-label-${item.id}">${item.ativo ? 'Ativo' : 'Pausado'}</span>
+          <button type="button" class="toggle-switch${item.ativo ? ' on' : ''}" id="avulso-toggle-${item.id}">
+            <span class="bolinha"></span>
+          </button>
+        `;
+        linha.appendChild(toggleWrap);
+
+        const btnExcluir = document.createElement('button');
+        btnExcluir.type = 'button';
+        btnExcluir.className = 'btn-icone menos';
+        btnExcluir.textContent = '−';
+        btnExcluir.title = 'Excluir item';
+        linha.appendChild(btnExcluir);
+
+        card.appendChild(linha);
+
+        const inputPreco = document.getElementById(`avulso-preco-${item.id}`);
+        inputPreco.addEventListener('blur', () => salvarPrecoAvulso(item.id, inputPreco));
+        inputPreco.addEventListener('keydown', (e) => { if (e.key === 'Enter') inputPreco.blur(); });
+
+        document.getElementById(`avulso-toggle-${item.id}`).onclick = () => alternarAtivoAvulso(item.id, item.ativo);
+        btnExcluir.onclick = () => excluirProdutoAvulso(item.id, item.nome);
+      });
+
+      // Linha de adicionar novo item dentro desta categoria
+      const ordemCategoriaAtual = porCategoria[categoria][0].ordem_categoria;
+      const linhaAdicionar = document.createElement('div');
+      linhaAdicionar.className = 'linha-adicionar-item-avulso';
+      linhaAdicionar.innerHTML = `
+        <input type="text" placeholder="Novo item…" id="avulso-novo-nome-${ordemCategoriaAtual}" />
+        <input type="number" step="0.01" placeholder="Preço" id="avulso-novo-preco-${ordemCategoriaAtual}" />
+        <button type="button" class="btn-icone mais" title="Adicionar item">+</button>
+      `;
+      const btnAdicionar = linhaAdicionar.querySelector('.btn-icone.mais');
+      btnAdicionar.onclick = () => adicionarProdutoAvulso(categoria, ordemCategoriaAtual);
+      card.appendChild(linhaAdicionar);
+
+      container.appendChild(card);
+    });
+
+    if (data.length === 0) {
+      container.innerHTML = '<p style="color:var(--ink-faint)">Nenhum produto cadastrado ainda.</p>';
+    }
+  }
+
+  async function salvarPrecoAvulso(itemId, inputEl) {
+    const novoPreco = parseFloat(inputEl.value);
+    if (isNaN(novoPreco) || novoPreco < 0) {
+      mostrarToast('Preço inválido.', true);
+      return;
+    }
+    try {
+      const { error } = await sb.from('produtos_avulsos').update({ preco: novoPreco }).eq('id', itemId);
+      if (error) throw error;
+      mostrarToast('Preço atualizado.');
+    } catch (err) {
+      mostrarToast('Erro ao salvar preço: ' + err.message, true);
+    }
+  }
+
+  async function alternarAtivoAvulso(itemId, ativoAtual) {
+    const novoValor = !ativoAtual;
+    const toggleEl = document.getElementById('avulso-toggle-' + itemId);
+    const labelEl = document.getElementById('avulso-toggle-label-' + itemId);
+    const linhaEl = document.getElementById('avulso-linha-' + itemId);
+
+    toggleEl.classList.toggle('on');
+    labelEl.textContent = novoValor ? 'Ativo' : 'Pausado';
+    linhaEl.classList.toggle('inativo');
+
+    try {
+      const { error } = await sb.from('produtos_avulsos').update({ ativo: novoValor }).eq('id', itemId);
+      if (error) throw error;
+      mostrarToast(novoValor ? 'Item reativado.' : 'Item pausado.');
+    } catch (err) {
+      toggleEl.classList.toggle('on');
+      labelEl.textContent = ativoAtual ? 'Ativo' : 'Pausado';
+      linhaEl.classList.toggle('inativo');
+      mostrarToast('Erro: ' + err.message, true);
+    }
+  }
+
+  async function excluirProdutoAvulso(itemId, nome) {
+    const confirmado = window.confirm(`Excluir "${nome}"? Isso não pode ser desfeito.`);
+    if (!confirmado) return;
+
+    try {
+      const { error } = await sb.from('produtos_avulsos').delete().eq('id', itemId);
+      if (error) throw error;
+      mostrarToast(`"${nome}" excluído.`);
+      carregarProdutosAvulsos();
+    } catch (err) {
+      mostrarToast('Erro ao excluir: ' + err.message, true);
+    }
+  }
+
+  async function adicionarProdutoAvulso(categoria, ordemCategoria) {
+    const inputNome = document.getElementById(`avulso-novo-nome-${ordemCategoria}`);
+    const inputPreco = document.getElementById(`avulso-novo-preco-${ordemCategoria}`);
+    const nome = inputNome.value.trim();
+    const preco = parseFloat(inputPreco.value);
+
+    if (!nome) { mostrarToast('Digite o nome do item.', true); return; }
+    if (isNaN(preco) || preco < 0) { mostrarToast('Digite um preço válido.', true); return; }
+
+    try {
+      const { error } = await sb.from('produtos_avulsos').insert({
+        categoria, nome, preco, ativo: true,
+        ordem_categoria: ordemCategoria, ordem_item: 999
+      });
+      if (error) throw error;
+      mostrarToast(`"${nome}" adicionado.`);
+      carregarProdutosAvulsos();
+    } catch (err) {
+      mostrarToast('Erro ao adicionar: ' + err.message, true);
     }
   }
 
