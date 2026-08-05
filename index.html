@@ -351,6 +351,65 @@
 
   .oculto { display: none !important; }
 
+  /* ---- produtos avulsos (bebidas, sorvetes, doces) na pagina de pedido ---- */
+
+  .avulso-categoria-titulo {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--chocolate-700);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 16px 0 8px;
+  }
+  .avulso-categoria-titulo:first-child { margin-top: 0; }
+
+  .avulso-item-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .avulso-item-linha:first-of-type { border-top: none; }
+
+  .avulso-info { flex: 1; min-width: 0; }
+  .avulso-nome { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .avulso-preco { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+
+  .avulso-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .avulso-stepper button {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid var(--amber-500);
+    background: var(--creme-0);
+    color: var(--amber-600);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s var(--ease), background 0.12s var(--ease);
+  }
+  .avulso-stepper button:active { transform: scale(0.9); }
+  .avulso-stepper button.mais { background: var(--amber-500); color: white; }
+
+  .avulso-qtd {
+    min-width: 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
   /* ===================== CUPOM DE IMPRESSÃO ===================== */
 
   #reciboImprimir { display: none; }
@@ -466,6 +525,7 @@
         <div class="segmento ativo" data-valor="executivo">Executivo</div>
         <div class="segmento" data-valor="marmitex">Marmitex</div>
         <div class="segmento" data-valor="especial">Especial</div>
+        <div class="segmento" data-valor="avulso">Bebidas/Sorvetes/Doces</div>
       </div>
 
       <div id="blocoTamanho" class="oculto" style="margin-top:14px;">
@@ -488,11 +548,18 @@
       <div id="especiaisContainer"><span class="carregando">Carregando pratos especiais…</span></div>
     </div>
 
-    <div class="cartao">
+    <div id="blocoProdutosAvulsos" class="cartao oculto">
+      <h2 class="titulo-cartao">Bebidas, sorvetes e doces</h2>
+      <p class="desc" style="margin-top:-8px;">Toque em "+" pra ir somando a quantidade. Ao terminar, clique em "Adicionar ao pedido" uma única vez.</p>
+      <div id="avulsosPedidoContainer"><span class="carregando">Carregando produtos…</span></div>
+    </div>
+
+    <div class="cartao" id="cartaoObservacao">
       <h2 class="titulo-cartao">Observação <span style="font-weight:400; font-size:13px; color:var(--ink-faint);">(opcional)</span></h2>
       <div class="chips" id="chipsObservacaoRapida" style="margin-bottom:12px;"></div>
       <textarea id="inputObservacao" placeholder="Só escreva aqui se for algo fora da lista acima" rows="2"></textarea>
     </div>
+
 
     <button class="botao-primario" id="btnAdicionarPrato" onclick="adicionarOuSalvarPrato()">Adicionar ao pedido</button>
     <div class="espaco-botao">
@@ -552,6 +619,8 @@
   let identificador = '';
   let cardapioHoje = [];
   let pratosEspeciais = [];
+  let produtosAvulsos = [];
+  let quantidadesAvulsos = {};             // id do produto -> quantidade escolhida
   let precoExecutivo = 0;
   let precosMarmitex = {};
   let tipoVendaAtual = 'executivo';
@@ -577,13 +646,15 @@
   }
 
   async function carregarDadosCardapio() {
-    const [precos, cardapio, especiais] = await Promise.all([
+    const [precos, cardapio, especiais, avulsos] = await Promise.all([
       buscarPrecos(),
       buscarCardapioHoje(),
-      buscarPratosEspeciais()
+      buscarPratosEspeciais(),
+      buscarProdutosAvulsos()
     ]);
     montarCardapio();
     montarPratosEspeciais();
+    montarProdutosAvulsos();
   }
 
   async function buscarPrecos() {
@@ -610,6 +681,15 @@
     if (!error && data) pratosEspeciais = data;
   }
 
+  async function buscarProdutosAvulsos() {
+    const { data, error } = await sb.from('produtos_avulsos')
+      .select('id,categoria,nome,preco,ordem_categoria,ordem_item')
+      .eq('ativo', true)
+      .order('ordem_categoria')
+      .order('ordem_item');
+    if (!error && data) produtosAvulsos = data;
+  }
+
   // ===== TIPO DE VENDA / TAMANHO (segmentado) =====
   document.getElementById('segmentoTipoVenda').addEventListener('click', (e) => {
     const alvo = e.target.closest('.segmento');
@@ -632,19 +712,34 @@
     const blocoTamanho = document.getElementById('blocoTamanho');
     const blocoMontar = document.getElementById('blocoMontarPrato');
     const blocoEspeciais = document.getElementById('blocoPratosEspeciais');
+    const blocoAvulsos = document.getElementById('blocoProdutosAvulsos');
+    const cartaoObs = document.getElementById('cartaoObservacao');
 
     if (tipoVendaAtual === 'executivo') {
       blocoTamanho.classList.add('oculto');
       blocoMontar.classList.remove('oculto');
       blocoEspeciais.classList.add('oculto');
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
     } else if (tipoVendaAtual === 'marmitex') {
       blocoTamanho.classList.remove('oculto');
       blocoMontar.classList.remove('oculto');
       blocoEspeciais.classList.add('oculto');
-    } else {
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
+    } else if (tipoVendaAtual === 'especial') {
       blocoTamanho.classList.remove('oculto');
       blocoMontar.classList.add('oculto');
       blocoEspeciais.classList.remove('oculto');
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
+    } else {
+      // avulso: bebidas, sorvetes, doces — sem tamanho, sem observação por item
+      blocoTamanho.classList.add('oculto');
+      blocoMontar.classList.add('oculto');
+      blocoEspeciais.classList.add('oculto');
+      blocoAvulsos.classList.remove('oculto');
+      cartaoObs.classList.add('oculto');
     }
   }
 
@@ -708,6 +803,59 @@
     });
   }
 
+  function montarProdutosAvulsos() {
+    const container = document.getElementById('avulsosPedidoContainer');
+    container.innerHTML = '';
+
+    if (produtosAvulsos.length === 0) {
+      container.innerHTML = '<p style="color:var(--alert); font-size:13.5px;">Nenhum produto disponível.</p>';
+      return;
+    }
+
+    const categoriasNaOrdem = [];
+    const porCategoria = {};
+    produtosAvulsos.forEach(item => {
+      if (!porCategoria[item.categoria]) { porCategoria[item.categoria] = []; categoriasNaOrdem.push(item.categoria); }
+      porCategoria[item.categoria].push(item);
+    });
+
+    categoriasNaOrdem.forEach(categoria => {
+      const titulo = document.createElement('div');
+      titulo.className = 'avulso-categoria-titulo';
+      titulo.textContent = categoria;
+      container.appendChild(titulo);
+
+      porCategoria[categoria].forEach(item => {
+        const qtd = quantidadesAvulsos[item.id] || 0;
+
+        const linha = document.createElement('div');
+        linha.className = 'avulso-item-linha';
+        linha.id = 'avulso-pedido-linha-' + item.id;
+        linha.innerHTML = `
+          <div class="avulso-info">
+            <div class="avulso-nome">${item.nome}</div>
+            <div class="avulso-preco">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+          </div>
+          <div class="avulso-stepper">
+            <button type="button" class="menos">−</button>
+            <span class="avulso-qtd" id="avulso-qtd-${item.id}">${qtd}</span>
+            <button type="button" class="mais">+</button>
+          </div>
+        `;
+        linha.querySelector('.menos').onclick = () => alterarQuantidadeAvulso(item.id, -1);
+        linha.querySelector('.mais').onclick = () => alterarQuantidadeAvulso(item.id, 1);
+        container.appendChild(linha);
+      });
+    });
+  }
+
+  function alterarQuantidadeAvulso(itemId, delta) {
+    const atual = quantidadesAvulsos[itemId] || 0;
+    const novo = Math.max(0, atual + delta);
+    quantidadesAvulsos[itemId] = novo;
+    document.getElementById('avulso-qtd-' + itemId).textContent = novo;
+  }
+
   function montarChipsObservacaoRapida() {
     const container = document.getElementById('chipsObservacaoRapida');
     container.innerHTML = '';
@@ -739,7 +887,41 @@
     return 'P';
   }
 
+  function adicionarProdutosAvulsosAoCarrinho() {
+    const itensEscolhidos = produtosAvulsos.filter(p => (quantidadesAvulsos[p.id] || 0) > 0);
+
+    if (itensEscolhidos.length === 0) {
+      mostrarToast('Escolha ao menos um item (toque no +).', true);
+      return;
+    }
+
+    itensEscolhidos.forEach(item => {
+      const qtd = quantidadesAvulsos[item.id];
+      carrinho.push({
+        tipoVenda: 'avulso',
+        tamanho: null,
+        componentes: [],
+        pratoEspecialId: null,
+        pratoEspecialNome: null,
+        produtoAvulsoId: item.id,
+        produtoAvulsoNome: item.nome,
+        quantidade: qtd,
+        observacao: '',
+        preco: item.preco * qtd   // preço já total da linha (unidade x quantidade)
+      });
+    });
+
+    mostrarToast(itensEscolhidos.length === 1 ? 'Item adicionado ao pedido.' : 'Itens adicionados ao pedido.');
+    quantidadesAvulsos = {};
+    montarProdutosAvulsos();
+  }
+
   function adicionarOuSalvarPrato() {
+    if (tipoVendaAtual === 'avulso') {
+      adicionarProdutosAvulsosAoCarrinho();
+      return;
+    }
+
     const observacao = document.getElementById('inputObservacao').value.trim();
     let prato;
 
@@ -813,6 +995,7 @@
   function descricaoTipoVenda(prato) {
     if (prato.tipoVenda === 'marmitex') return 'Marmitex ' + rotuloTamanho(prato.tamanho);
     if (prato.tipoVenda === 'especial') return prato.pratoEspecialNome + ' — ' + rotuloTamanho(prato.tamanho);
+    if (prato.tipoVenda === 'avulso') return prato.quantidade + 'x ' + prato.produtoAvulsoNome;
     return 'Executivo';
   }
 
@@ -840,18 +1023,20 @@
       const componentesTexto = prato.componentes.length > 0
         ? `<div class="componentes">${prato.componentes.map(c => c.nome).join(', ')}</div>` : '';
       const obsTexto = prato.observacao ? `<div class="obs">Obs: ${prato.observacao}</div>` : '';
+      const botaoEditar = prato.tipoVenda === 'avulso' ? '' : '<button class="btn-mini editar">Editar</button>';
 
       linha.innerHTML = `
         <div class="titulo-prato"><span>${descricaoTipoVenda(prato)}</span><span>R$ ${prato.preco.toFixed(2)}</span></div>
         ${componentesTexto}
         ${obsTexto}
         <div class="acoes">
-          <button class="btn-mini editar">Editar</button>
+          ${botaoEditar}
           <button class="btn-mini remover">Remover</button>
         </div>
       `;
 
-      linha.querySelector('.editar').onclick = () => editarPrato(index);
+      const btnEditar = linha.querySelector('.editar');
+      if (btnEditar) btnEditar.onclick = () => editarPrato(index);
       linha.querySelector('.remover').onclick = () => removerPrato(index);
       container.appendChild(linha);
     });
@@ -968,30 +1153,36 @@
     try {
       const total = carrinho.reduce((s, p) => s + p.preco, 0);
 
-      const { data: pedido, error: erroPedido } = await sb.from('orders')
-        .insert({ identificador, status: 'fechado', total })
-        .select()
-        .single();
+      // Gera o ID no navegador, em vez de pedir ele de volta do banco —
+      // assim não depende de permissão de LEITURA, só de escrita (INSERT).
+      const orderId = crypto.randomUUID();
+
+      const { error: erroPedido } = await sb.from('orders')
+        .insert({ id: orderId, identificador, status: 'fechado', total });
       if (erroPedido) throw erroPedido;
 
       for (const prato of carrinho) {
-        const { data: pratoSalvo, error: erroPrato } = await sb.from('order_pratos')
+        const pratoId = crypto.randomUUID();
+
+        const { error: erroPrato } = await sb.from('order_pratos')
           .insert({
-            order_id: pedido.id,
+            id: pratoId,
+            order_id: orderId,
             tipo_venda: prato.tipoVenda,
             tamanho: prato.tamanho,
+            quantidade: prato.quantidade || 1,
             preco_unitario: prato.preco,
             observacao: prato.observacao,
             prato_especial_id: prato.pratoEspecialId,
-            prato_especial_nome: prato.pratoEspecialNome
-          })
-          .select()
-          .single();
+            prato_especial_nome: prato.pratoEspecialNome,
+            produto_avulso_id: prato.produtoAvulsoId || null,
+            produto_avulso_nome: prato.produtoAvulsoNome || null
+          });
         if (erroPrato) throw erroPrato;
 
         if (prato.componentes.length > 0) {
           const itens = prato.componentes.map(c => ({
-            order_prato_id: pratoSalvo.id,
+            order_prato_id: pratoId,
             menu_item_id: c.id,
             nome: c.nome
           }));
@@ -1006,6 +1197,7 @@
       setTimeout(() => {
         carrinho = [];
         identificador = '';
+        quantidadesAvulsos = {};
         document.getElementById('inputIdentificador').value = '';
         document.getElementById('etapaResumo').classList.add('oculto');
         document.getElementById('etapaCardapio').classList.add('oculto');
