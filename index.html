@@ -1,1 +1,1923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Caseirinho 261 · Fazer Pedido</title>
+<link rel="icon" type="image/png" href="logo_caserinho.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --chocolate-950: #241209;
+    --chocolate-800: #3B2418;
+    --chocolate-700: #4A2E1A;
+    --chocolate-600: #6B4226;
+    --amber-600: #D9800F;
+    --amber-500: #F0971E;
+    --amber-400: #F5AC3C;
+    --amber-200: #FBD79B;
+    --amber-100: #FCE8C8;
+    --creme-50: #FBF3E7;
+    --creme-0: #FFFCF7;
+    --ink: #2A1810;
+    --ink-soft: #7A6552;
+    --ink-faint: #A8927C;
+    --line: #E8D9C3;
+    --alert: #A6402C;
+    --alert-bg: #F7E4DE;
+    --sage: #5F7F4E;
+    --shadow-warm: 0 24px 60px -24px rgba(36, 18, 9, 0.35);
+    --shadow-soft: 0 10px 30px -14px rgba(36, 18, 9, 0.22);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
 
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0;
+    background: var(--creme-50);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 40px;
+  }
+
+  .fonte-display { font-family: 'Fraunces', serif; }
+
+  /* ===================== TELA DE LOGIN ===================== */
+  #tela-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: linear-gradient(160deg, var(--chocolate-800), var(--chocolate-950));
+  }
+  .cartao-login {
+    width: 100%;
+    max-width: 380px;
+    background: var(--creme-0);
+    border-radius: 22px;
+    padding: 32px 26px;
+    box-shadow: var(--shadow-warm);
+    text-align: center;
+  }
+  .logo-login-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .logo-login {
+    width: 130px;
+    height: auto;
+    max-height: 110px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 18px rgba(36,18,9,0.25));
+  }
+  .marca-login h1 { font-family:'Fraunces',serif; font-size:22px; margin:6px 0 2px; color:var(--ink); }
+  .marca-login p { color:var(--ink-faint); font-size:13px; margin:0 0 16px; }
+
+  .abas-login {
+    display: flex;
+    gap: 4px;
+    background: var(--creme-50);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    margin-bottom: 16px;
+  }
+  .aba-login {
+    flex: 1;
+    padding: 8px 2px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .aba-login.ativa {
+    background: var(--creme-0);
+    color: var(--chocolate-800);
+    box-shadow: 0 2px 6px rgba(36,18,9,0.12);
+    font-weight: 700;
+  }
+  .campo-login { text-align:left; margin-bottom:12px; }
+  .campo-login label { display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; }
+  .campo-login input {
+    width:100%; padding:11px 13px; border-radius:11px; border:1px solid var(--line);
+    background: var(--creme-50); font-size:14px; color:var(--ink); box-sizing:border-box;
+  }
+  #btn-entrar-garcom {
+    width:100%; margin-top:6px; padding:12px; border:none; border-radius:12px;
+    background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+    color:white; font-weight:700; font-size:14.5px; cursor:pointer;
+  }
+  #btn-entrar-garcom:disabled { opacity:.6; }
+  #erro-login-garcom {
+    display:none; background: var(--alert-bg); color: var(--alert);
+    padding:10px 12px; border-radius:10px; font-size:12.5px; margin-bottom:12px; text-align:left; border: 1px solid var(--alert);
+  }
+  #erro-login-garcom.mostrar { display:block; }
+  #msg-sucesso-login {
+    display:none; background: #E8F5E9; color: #2E7D32;
+    padding:10px 12px; border-radius:10px; font-size:12.5px; margin-bottom:12px; text-align:left; border: 1px solid #A5D6A7;
+  }
+  #msg-sucesso-login.mostrar { display:block; }
+  .rodape-login { margin-top:14px; font-size:11px; color:var(--ink-faint); }
+
+  header {
+    background: linear-gradient(160deg, var(--chocolate-800), var(--chocolate-950));
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow-soft);
+  }
+
+  header img.logo-header {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  header h1 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; margin: 0; }
+  header .sub { font-size: 11px; color: var(--amber-200); margin-top: 1px; }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px 16px 0;
+  }
+
+  .cartao {
+    background: var(--creme-0);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .eyebrow {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--amber-600);
+    margin: 0 0 3px;
+  }
+
+  h2.titulo-cartao {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--chocolate-700);
+  }
+
+  label.rotulo {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 15px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    font-size: 16px;
+    background: var(--creme-50);
+    font-family: inherit;
+    color: var(--ink);
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    background: var(--creme-0);
+    box-shadow: 0 0 0 4px var(--amber-100);
+  }
+
+  .botao-primario, .botao-secundario, .botao-perigo {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), opacity 0.15s var(--ease);
+    letter-spacing: 0.3px;
+  }
+
+  .botao-primario {
+    background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+    color: white;
+    box-shadow: 0 10px 24px -10px rgba(217,128,15,0.55);
+  }
+  .botao-primario:active { transform: scale(0.98); }
+  .botao-primario:disabled { opacity: 0.55; }
+
+  .botao-secundario {
+    background: var(--chocolate-700);
+    color: var(--creme-0);
+  }
+  .botao-secundario:active { transform: scale(0.98); }
+
+  .botao-perigo {
+    background: var(--alert);
+    color: white;
+    box-shadow: 0 10px 24px -10px rgba(166,64,44,0.5);
+  }
+  .botao-perigo:active { transform: scale(0.98); }
+  .botao-perigo:disabled { opacity: 0.55; }
+
+  .espaco-botao { margin-top: 12px; }
+
+  .segmentado {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .segmento {
+    flex: 1;
+    padding: 14px 8px;
+    text-align: center;
+    border-radius: 11px;
+    border: 1.5px solid var(--line);
+    background: var(--creme-50);
+    color: var(--ink-soft);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+    user-select: none;
+  }
+
+  .segmento.ativo {
+    background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+    border-color: var(--amber-600);
+    color: white;
+    box-shadow: 0 6px 16px -6px rgba(217,128,15,0.55);
+  }
+
+  .categoria-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--chocolate-700);
+    margin: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .categoria-titulo:first-child { margin-top: 0; }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 11px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--creme-50);
+    color: var(--ink);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+    user-select: none;
+  }
+
+  .chip.marcado {
+    background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+    border-color: var(--amber-600);
+    color: white;
+    box-shadow: 0 4px 12px -4px rgba(217,128,15,0.5);
+  }
+
+  .chip.rapido {
+    background: var(--amber-100);
+    border-color: var(--amber-200);
+    color: var(--chocolate-700);
+  }
+  .chip.rapido:active { transform: scale(0.96); }
+
+  .prato-especial-card {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: var(--creme-50);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .prato-especial-card.marcado {
+    background: var(--amber-100);
+    border-color: var(--amber-500);
+    box-shadow: var(--shadow-soft);
+  }
+  .prato-especial-card .nome { font-weight: 700; font-size: 14.5px; color: var(--ink); }
+  .prato-especial-card .desc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  textarea, .campo-obs {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-family: inherit;
+    background: var(--creme-50);
+    color: var(--ink);
+    resize: none;
+    min-height: 52px;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    background: var(--creme-0);
+  }
+
+  .linha-resumo {
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+  .linha-resumo:first-child { border-top: none; padding-top: 0; }
+
+  .linha-resumo .titulo-prato {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+  .linha-resumo .componentes {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .linha-resumo .obs {
+    font-size: 13px;
+    color: var(--alert);
+    margin-top: 2px;
+  }
+  .linha-resumo .acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-mini {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: 1.5px solid var(--line);
+    background: var(--creme-0);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .btn-mini.editar { border-color: var(--amber-500); color: var(--amber-600); }
+  .btn-mini.remover { border-color: var(--alert); color: var(--alert); }
+
+  .total-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 16px;
+    margin-top: 4px;
+    border-top: 2px solid var(--line);
+  }
+  .total-linha .rotulo-total { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+  .total-linha .valor-total { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; color: var(--chocolate-700); }
+
+  .carregando { font-size: 13.5px; color: var(--ink-faint); }
+
+  #toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(24px);
+    background: var(--chocolate-800);
+    color: var(--creme-0);
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+    box-shadow: var(--shadow-warm);
+    border-left: 4px solid var(--amber-500);
+    z-index: 100;
+    max-width: 90%;
+    text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.erro { border-left-color: var(--alert); }
+
+  .oculto { display: none !important; }
+
+  .avulso-categoria-titulo {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--chocolate-700);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 16px 0 8px;
+  }
+  .avulso-categoria-titulo:first-child { margin-top: 0; }
+
+  .avulso-item-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .avulso-item-linha:first-of-type { border-top: none; }
+
+  .avulso-info { flex: 1; min-width: 0; }
+  .avulso-nome { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .avulso-preco { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+
+  .avulso-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .avulso-stepper button {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid var(--amber-500);
+    background: var(--creme-0);
+    color: var(--amber-600);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s var(--ease), background 0.12s var(--ease);
+  }
+  .avulso-stepper button:active { transform: scale(0.9); }
+  .avulso-stepper button.mais { background: var(--amber-500); color: white; }
+
+  .avulso-qtd {
+    min-width: 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  /* ===================== CUPOM FISCAL 40mm ===================== */
+  #reciboImprimir {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 40mm;
+    min-width: 40mm;
+    max-width: 40mm;
+    margin: 0;
+    padding: 1.5mm 1.2mm 2mm;
+    font-family: 'Courier New', Courier, monospace;
+    color: #000;
+    background: #fff;
+    box-sizing: border-box;
+    z-index: -1;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  #reciboImprimir.capturando {
+    visibility: visible;
+    left: 0;
+    top: 0;
+    z-index: 99999;
+  }
+
+  /* Logo centralizada, encaixada na largura do cupom */
+  #reciboImprimir .recibo-logo {
+    width: 100%;
+    text-align: center;
+    margin: 0 0 2px 0;
+    padding: 0;
+  }
+  #reciboImprimir .recibo-logo img {
+    width: 37mm;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+
+  #reciboImprimir .recibo-linha {
+    border: none;
+    border-top: 1px solid #000;
+    margin: 2px 0;
+    height: 0;
+  }
+  #reciboImprimir .recibo-linha.grossa {
+    border-top-width: 2px;
+  }
+  #reciboImprimir .recibo-linha.tracejada {
+    border-top: 1px dashed #000;
+  }
+
+  #reciboImprimir .recibo-identificador {
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+    line-height: 1.2;
+    margin: 2px 0;
+    word-break: break-word;
+  }
+  #reciboImprimir .recibo-datahora {
+    text-align: center;
+    font-size: 8.5px;
+    line-height: 1.2;
+    margin: 0 0 2px 0;
+  }
+
+  #reciboImprimir .recibo-item {
+    margin: 4px 0;
+  }
+
+  /* [ ] esquerda | descrição | preço direita — ordem do pedido */
+  #reciboImprimir .recibo-item-topo {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    font-weight: bold;
+    font-size: 9.5px;
+    line-height: 1.25;
+    gap: 2px;
+  }
+  #reciboImprimir .recibo-item-esq {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  #reciboImprimir .recibo-item-check {
+    flex: 0 0 auto;
+    font-weight: bold;
+  }
+  #reciboImprimir .recibo-item-desc {
+    flex: 1 1 auto;
+    text-align: left;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  #reciboImprimir .recibo-item-preco {
+    flex: 0 0 auto;
+    text-align: right;
+    white-space: nowrap;
+    font-weight: bold;
+    margin-left: 2px;
+  }
+
+  #reciboImprimir .recibo-item-sub {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3px;
+    font-size: 8.5px;
+    line-height: 1.2;
+    padding-left: 0;
+    margin-top: 1px;
+    word-break: break-word;
+  }
+
+  #reciboImprimir .recibo-total {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    font-weight: bold;
+    font-size: 11px;
+    margin: 4px 0 2px;
+  }
+
+  /* Rodapé: linha tracejada + [login] - [data] [hora] */
+  #reciboImprimir .recibo-rodape {
+    text-align: center;
+    font-size: 8px;
+    font-weight: bold;
+    margin: 2px 0 0;
+    word-break: break-all;
+    line-height: 1.2;
+  }
+
+  @media print {
+    @page { size: 40mm auto; margin: 0; }
+    body * { visibility: hidden !important; }
+    #reciboImprimir, #reciboImprimir * { visibility: visible !important; }
+    #reciboImprimir {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 40mm !important;
+      z-index: 1 !important;
+    }
+  }
+
+  #previewCupomSlot {
+    width: 40mm;
+    max-width: 40mm;
+    font-family: 'Courier New', Courier, monospace;
+    color: #000;
+    background: #fff;
+    padding: 1.5mm 1.2mm;
+    box-sizing: border-box;
+    font-size: 10px;
+  }
+  #previewCupomSlot .recibo-logo { text-align: center; }
+  #previewCupomSlot .recibo-logo img {
+    width: 37mm; max-width: 100%; height: auto; display: block; margin: 0 auto;
+  }
+  #previewCupomSlot .recibo-linha { border-top: 1px solid #000; margin: 2px 0; }
+  #previewCupomSlot .recibo-linha.grossa { border-top-width: 2px; }
+  #previewCupomSlot .recibo-linha.tracejada { border-top-style: dashed; }
+  #previewCupomSlot .recibo-identificador { text-align: center; font-weight: bold; font-size: 11px; }
+  #previewCupomSlot .recibo-datahora { text-align: center; font-size: 8.5px; }
+  #previewCupomSlot .recibo-item-topo {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    font-weight: bold; font-size: 9.5px; gap: 2px;
+  }
+  #previewCupomSlot .recibo-item-esq { display: flex; gap: 3px; flex: 1; min-width: 0; }
+  #previewCupomSlot .recibo-item-preco { white-space: nowrap; flex-shrink: 0; }
+  #previewCupomSlot .recibo-item-sub { display: flex; gap: 3px; font-size: 8.5px; margin-top: 1px; }
+  #previewCupomSlot .recibo-total {
+    display: flex; justify-content: space-between; font-weight: bold; font-size: 11px; margin: 4px 0 2px;
+  }
+  #previewCupomSlot .recibo-rodape { text-align: center; font-size: 8px; font-weight: bold; }
+
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="tela-login">
+  <div class="cartao-login">
+    <div class="logo-login-wrap">
+      <img src="logo_caserinho.png" class="logo-login" alt="Logo Caseirinho 261"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <div style="display:none;font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:var(--chocolate-800);">C261</div>
+    </div>
+    <div class="marca-login">
+      <h1>Caseirinho 261</h1>
+      <p>Pedido · Acesso do garçom</p>
+    </div>
+
+    <div class="abas-login">
+      <button type="button" class="aba-login ativa" id="aba-entrar" onclick="alternarModoAuth('entrar')">Entrar</button>
+      <button type="button" class="aba-login" id="aba-cadastrar" onclick="alternarModoAuth('cadastrar')">Cadastrar</button>
+      <button type="button" class="aba-login" id="aba-reset" onclick="alternarModoAuth('reset')">Recuperar</button>
+    </div>
+
+    <div id="msg-sucesso-login"></div>
+    <div id="erro-login-garcom"></div>
+
+    <form id="form-login-garcom" onsubmit="return false;">
+      <div class="campo-login">
+        <label>E-mail</label>
+        <input type="email" id="login-email-garcom" autocomplete="username" placeholder="seu@email.com" />
+      </div>
+      <div class="campo-login" id="campo-senha-wrap">
+        <label>Senha</label>
+        <input type="password" id="login-senha-garcom" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div class="campo-login" id="campo-confirmar-senha-wrap" style="display:none;">
+        <label>Confirmar Senha</label>
+        <input type="password" id="login-confirmar-senha-garcom" autocomplete="new-password" placeholder="••••••••" />
+      </div>
+      <button type="button" id="btn-entrar-garcom" onclick="submeterAuth()">Entrar</button>
+    </form>
+
+    <div class="rodape-login">Acesso exclusivo do estabelecimento</div>
+  </div>
+</div>
+
+<!-- ========== HEADER APP ========== -->
+<header style="display:none" id="header-app-garcom">
+  <img src="logo_caserinho.png" class="logo-header" alt="Logo Caseirinho 261"
+       onerror="this.style.display='none';" />
+  <div>
+    <h1>Caseirinho 261</h1>
+    <div class="sub">Fazer pedido</div>
+  </div>
+  <button id="btn-sair-garcom" onclick="sairGarcom()" style="margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600;">Sair</button>
+</header>
+
+<main id="app-garcom" style="display:none">
+
+  <!-- ETAPA 1: IDENTIFICAÇÃO -->
+  <section id="etapaIdentificacao" class="cartao">
+    <div class="eyebrow">Passo 1</div>
+    <h2 class="titulo-cartao">Mesa, balcão ou cliente</h2>
+    <label class="rotulo">Identificação do pedido</label>
+    <input type="text" id="inputIdentificador" placeholder="Ex: Mesa 5, Balcão, João Silva" autocomplete="off" />
+    <div class="espaco-botao">
+      <button class="botao-primario" onclick="iniciarPedido()">Iniciar pedido</button>
+    </div>
+  </section>
+
+  <!-- ETAPA 2: CARDÁPIO -->
+  <section id="etapaCardapio" class="oculto">
+
+    <div class="cartao">
+      <div class="eyebrow">Passo 2</div>
+      <h2 class="titulo-cartao" id="textoIdentificadorTopo"></h2>
+
+      <label class="rotulo">Tipo de venda</label>
+      <div class="segmentado" id="segmentoTipoVenda">
+        <div class="segmento ativo" data-valor="executivo">Executivo</div>
+        <div class="segmento" data-valor="marmitex">Marmitex</div>
+        <div class="segmento" data-valor="especial">Especial</div>
+        <div class="segmento" data-valor="avulso">Bebidas/Sorvetes/Doces</div>
+      </div>
+
+      <div id="blocoTamanho" class="oculto" style="margin-top:14px;">
+        <label class="rotulo">Tamanho</label>
+        <div class="segmentado" id="segmentoTamanho">
+          <div class="segmento ativo" data-valor="P">P</div>
+          <div class="segmento" data-valor="G">G</div>
+          <div class="segmento" data-valor="Divisorias">Divisórias</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartao" id="blocoMontarPrato">
+      <h2 class="titulo-cartao">Monte o prato</h2>
+      <div id="cardapioContainer"><span class="carregando">Carregando cardápio…</span></div>
+    </div>
+
+    <div class="cartao oculto" id="blocoPratosEspeciais">
+      <h2 class="titulo-cartao">Escolha o prato especial</h2>
+      <div id="especiaisContainer"><span class="carregando">Carregando pratos especiais…</span></div>
+    </div>
+
+    <div class="cartao oculto" id="blocoProdutosAvulsos">
+      <h2 class="titulo-cartao">Bebidas, sorvetes e doces</h2>
+      <p style="margin-top:-8px;font-size:13px;color:var(--ink-soft);">Toque em "+" pra ir somando a quantidade. Ao terminar, clique em "Adicionar ao pedido" uma única vez.</p>
+      <div id="avulsosPedidoContainer"><span class="carregando">Carregando produtos…</span></div>
+    </div>
+
+    <div class="cartao" id="cartaoObservacao">
+      <label class="rotulo">Observação</label>
+      <div class="chips" id="chipsObservacaoRapida" style="margin-bottom:10px;"></div>
+      <textarea id="inputObservacao" class="campo-obs" placeholder="Ex: sem cebola, bem passado…" rows="2"></textarea>
+    </div>
+
+    <div class="cartao" style="padding:14px 18px;">
+      <button class="botao-primario" id="btnAdicionarPrato" onclick="adicionarOuSalvarPrato()">Adicionar ao pedido</button>
+      <div class="espaco-botao">
+        <button class="botao-secundario" onclick="mostrarResumo()">Ver resumo / Fechar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ETAPA 3: RESUMO -->
+  <section id="etapaResumo" class="oculto">
+    <div class="cartao">
+      <div class="eyebrow">Passo 3</div>
+      <h2 class="titulo-cartao" id="textoIdentificadorResumo"></h2>
+      <div id="resumoContainer"></div>
+      <div class="total-linha">
+        <span class="rotulo-total">Total</span>
+        <span class="valor-total" id="textoTotal">R$ 0,00</span>
+      </div>
+      <div class="espaco-botao">
+        <button class="botao-primario" id="btnFecharPedido" onclick="fecharPedido()">Fechar pedido</button>
+      </div>
+      <div class="espaco-botao">
+        <button class="botao-secundario" onclick="mostrarEtapaCardapio()">Voltar e adicionar mais</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ========== RECIBO / CUPOM FISCAL 40mm ========== -->
+<div id="reciboImprimir">
+  <div class="recibo-logo">
+    <img src="logo_caserinho.png" alt="Caseirinho 261"
+         onerror="this.style.display='none';" />
+  </div>
+  <div class="recibo-linha grossa"></div>
+  <div class="recibo-identificador" id="reciboIdentificador"></div>
+  <div class="recibo-datahora" id="reciboDataHora"></div>
+  <div class="recibo-linha grossa"></div>
+  <div id="reciboItens"></div>
+  <div class="recibo-linha grossa"></div>
+  <div class="recibo-total">
+    <span>TOTAL</span>
+    <span id="reciboTotalValor"></span>
+  </div>
+  <div class="recibo-linha tracejada"></div>
+  <div class="recibo-rodape" id="reciboRodape"></div>
+</div>
+
+
+<!-- Painel do cupom (visível após fechar pedido) -->
+<div id="painelCupom" class="oculto" style="max-width:420px;margin:16px auto;padding:0 16px 24px;">
+  <div class="cartao">
+    <div id="previewCupomWrap" style="background:#fff;border:1px dashed var(--line);border-radius:12px;padding:12px;display:flex;justify-content:center;overflow:auto;">
+      <div id="previewCupomSlot" style="transform:scale(1.15);transform-origin:top center;margin-bottom:8px;"></div>
+    </div>
+    <div class="espaco-botao">
+      <button type="button" class="botao-primario" onclick="imprimirCupomTela()">Baixar PDF 40mm</button>
+    </div>
+    <div class="espaco-botao">
+      <button type="button" class="botao-secundario" onclick="fecharPainelCupom()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"></div>
+
+<script>
+  // ===== SUPABASE =====
+  const SUPABASE_URL = 'https://qyjexmrxxvnmkngfjgip.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5amV4bXJ4eHZubWtuZ2ZqZ2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NTY0NDMsImV4cCI6MjEwMTQzMjQ0M30.d261NqiJ5CG7KhlLeESBwKjr58fIuLoof_nUnlqQTBY';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ===== AUTH STATE =====
+  // MODO TESTE (temporário) — depois trocamos pela autenticação real no Supabase
+  const LOGIN_TESTE = {
+    email: 'dstiagoalves@gmail.com',
+    senha: '123456'
+  };
+  let modoAuthAtual = 'entrar'; // entrar | cadastrar | reset
+  let emailGarcomLogado = '';
+  let modoTesteAtivo = false;
+  let ultimoCupom = null; // dados do último cupom para rebaixar PDF
+
+  function entrarNoAppGarcom(email) {
+    emailGarcomLogado = email || '';
+    document.getElementById('tela-login').style.display = 'none';
+    document.getElementById('header-app-garcom').style.display = 'flex';
+    document.getElementById('app-garcom').style.display = 'block';
+  }
+
+  function mensagemAmigavelGarcom(erro) {
+    const msg = (erro && erro.message) || '';
+    if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
+    if (msg.includes('Email not confirmed')) return 'Este acesso ainda não foi confirmado. Confira seu e-mail ou fale com o suporte.';
+    if (msg.includes('User already registered')) return 'Este e-mail já está cadastrado. Use Entrar ou Recuperar senha.';
+    if (msg.includes('Password should be')) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) return 'Não foi possível conectar. Verifique a conexão e tente novamente.';
+    if (msg.includes('rate limit') || msg.includes('security purposes')) return 'Muitas tentativas. Aguarde um momento e tente de novo.';
+    return 'Não foi possível concluir. Tente novamente em instantes.';
+  }
+
+  function limparMsgsAuth() {
+    const err = document.getElementById('erro-login-garcom');
+    const ok = document.getElementById('msg-sucesso-login');
+    err.classList.remove('mostrar');
+    ok.classList.remove('mostrar');
+    err.textContent = '';
+    ok.textContent = '';
+  }
+
+  function mostrarErroAuth(texto) {
+    limparMsgsAuth();
+    const el = document.getElementById('erro-login-garcom');
+    el.textContent = texto;
+    el.classList.add('mostrar');
+  }
+
+  function mostrarSucessoAuth(texto) {
+    limparMsgsAuth();
+    const el = document.getElementById('msg-sucesso-login');
+    el.textContent = texto;
+    el.classList.add('mostrar');
+  }
+
+  function alternarModoAuth(modo) {
+    modoAuthAtual = modo;
+    limparMsgsAuth();
+
+    document.querySelectorAll('.aba-login').forEach(b => b.classList.remove('ativa'));
+    const mapa = { entrar: 'aba-entrar', cadastrar: 'aba-cadastrar', reset: 'aba-reset' };
+    const aba = document.getElementById(mapa[modo]);
+    if (aba) aba.classList.add('ativa');
+
+    const wrapSenha = document.getElementById('campo-senha-wrap');
+    const wrapConf = document.getElementById('campo-confirmar-senha-wrap');
+    const btn = document.getElementById('btn-entrar-garcom');
+
+    if (modo === 'entrar') {
+      wrapSenha.style.display = '';
+      wrapConf.style.display = 'none';
+      btn.textContent = 'Entrar';
+    } else if (modo === 'cadastrar') {
+      wrapSenha.style.display = '';
+      wrapConf.style.display = '';
+      btn.textContent = 'Cadastrar';
+    } else {
+      wrapSenha.style.display = 'none';
+      wrapConf.style.display = 'none';
+      btn.textContent = 'Enviar link de recuperação';
+    }
+  }
+
+  async function submeterAuth() {
+    if (modoAuthAtual === 'entrar') return fazerLoginGarcom();
+    if (modoAuthAtual === 'cadastrar') return fazerCadastroGarcom();
+    return recuperarSenhaGarcom();
+  }
+
+  async function fazerLoginGarcom() {
+    const email = document.getElementById('login-email-garcom').value.trim();
+    const senha = document.getElementById('login-senha-garcom').value;
+    const btn = document.getElementById('btn-entrar-garcom');
+    limparMsgsAuth();
+
+    if (!email || !senha) {
+      mostrarErroAuth('Preencha e-mail e senha.');
+      return;
+    }
+
+    // Login de teste (sem Supabase) — só para visualização
+    if (
+      email.toLowerCase() === LOGIN_TESTE.email.toLowerCase() &&
+      senha === LOGIN_TESTE.senha
+    ) {
+      btn.disabled = true;
+      btn.textContent = 'Entrando…';
+      modoTesteAtivo = true;
+      try { localStorage.setItem('caseirinho_teste', LOGIN_TESTE.email); } catch (e) {}
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+        entrarNoAppGarcom(LOGIN_TESTE.email);
+      }, 250);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Entrando…';
+    const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+
+    if (error) {
+      mostrarErroAuth(mensagemAmigavelGarcom(error));
+      return;
+    }
+    modoTesteAtivo = false;
+    await checarPermissaoEEntrarGarcom();
+  }
+
+  async function fazerCadastroGarcom() {
+    limparMsgsAuth();
+    mostrarSucessoAuth('Cadastro real será liberado em breve. Por enquanto use o login de teste.');
+  }
+
+  async function recuperarSenhaGarcom() {
+    limparMsgsAuth();
+    mostrarSucessoAuth('Recuperação de senha real será liberada em breve. Por enquanto use o login de teste.');
+  }
+
+  async function sairGarcom() {
+    try { await sb.auth.signOut(); } catch (e) {}
+    modoTesteAtivo = false;
+    emailGarcomLogado = '';
+    try { localStorage.removeItem('caseirinho_teste'); } catch (e) {}
+    document.getElementById('login-email-garcom').value = '';
+    document.getElementById('login-senha-garcom').value = '';
+    document.getElementById('login-confirmar-senha-garcom').value = '';
+    limparMsgsAuth();
+    alternarModoAuth('entrar');
+    document.getElementById('tela-login').style.display = 'flex';
+    document.getElementById('header-app-garcom').style.display = 'none';
+    document.getElementById('app-garcom').style.display = 'none';
+  }
+
+  async function buscarMeuPerfilGarcom(tentativas) {
+    const { data: sess } = await sb.auth.getSession();
+    const usuario = sess && sess.session && sess.session.user;
+    if (!usuario) return null;
+    emailGarcomLogado = usuario.email || '';
+    const { data, error } = await sb.from('perfis').select('*').eq('id', usuario.id).single();
+    if (!error && data) return data;
+    if ((tentativas || 0) < 3) {
+      await new Promise(r => setTimeout(r, 900));
+      return buscarMeuPerfilGarcom((tentativas || 0) + 1);
+    }
+    return null;
+  }
+
+  async function checarPermissaoEEntrarGarcom() {
+    const btn = document.getElementById('btn-entrar-garcom');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando acesso…'; }
+
+    const perfil = await buscarMeuPerfilGarcom();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = modoAuthAtual === 'entrar' ? 'Entrar' : (modoAuthAtual === 'cadastrar' ? 'Cadastrar' : 'Enviar link de recuperação');
+    }
+
+    if (!perfil || !perfil.aprovado || !perfil.acesso_pedidos) {
+      try { await sb.auth.signOut(); } catch (e) {}
+      emailGarcomLogado = '';
+      mostrarErroAuth(perfil
+        ? 'Seu acesso ao app de pedidos ainda não foi liberado. Fale com o administrador.'
+        : 'Não foi possível carregar seu perfil. Tente novamente.');
+      return;
+    }
+
+    entrarNoAppGarcom(emailGarcomLogado);
+  }
+
+  document.getElementById('login-senha-garcom').addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') submeterAuth();
+  });
+  document.getElementById('login-confirmar-senha-garcom').addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') submeterAuth();
+  });
+  document.getElementById('login-email-garcom').addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') submeterAuth();
+  });
+
+  async function verificarSessaoGarcom() {
+    // Restaura login de teste se ainda estiver salvo
+    try {
+      const teste = localStorage.getItem('caseirinho_teste');
+      if (teste && teste.toLowerCase() === LOGIN_TESTE.email.toLowerCase()) {
+        modoTesteAtivo = true;
+        entrarNoAppGarcom(LOGIN_TESTE.email);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data.session) await checarPermissaoEEntrarGarcom();
+    } catch (e) {}
+  }
+  verificarSessaoGarcom();
+
+  // ===== CARDÁPIO / PEDIDO =====
+  const CATEGORIA_LABEL = { proteina: 'Prato principal', massa: 'Massa', acompanhamento: 'Acompanhamento', extra: 'Extra' };
+  const CATEGORIA_ORDEM = ['proteina', 'massa', 'acompanhamento', 'extra'];
+  const OBSERVACOES_RAPIDAS = ['Sem cebola', 'Sem pimentão', 'Bem passado', 'Ao ponto', 'Molho à parte', 'Sem farofa'];
+
+  let identificador = '';
+  let cardapioHoje = [];
+  let pratosEspeciais = [];
+  let produtosAvulsos = [];
+  let quantidadesAvulsos = {};
+  let precoExecutivo = 0;
+  let precosMarmitex = {};
+  let tipoVendaAtual = 'executivo';
+  let tamanhoAtual = 'P';
+  let itensSelecionados = new Set();
+  let pratoEspecialSelecionadoId = null;
+  let carrinho = [];
+  let indiceEditando = null;
+
+  async function iniciarPedido() {
+    const texto = document.getElementById('inputIdentificador').value.trim();
+    if (!texto) { mostrarToast('Informe mesa, balcão ou nome do cliente.', true); return; }
+    identificador = texto;
+    carrinho = [];
+    document.getElementById('textoIdentificadorTopo').textContent = 'Pedido: ' + identificador;
+    document.getElementById('etapaIdentificacao').classList.add('oculto');
+    document.getElementById('etapaResumo').classList.add('oculto');
+    document.getElementById('etapaCardapio').classList.remove('oculto');
+    resetarFormularioPrato();
+    await carregarDadosCardapio();
+    montarChipsObservacaoRapida();
+  }
+
+  async function carregarDadosCardapio() {
+    await Promise.all([
+      buscarPrecos(),
+      buscarCardapioHoje(),
+      buscarPratosEspeciais(),
+      buscarProdutosAvulsos()
+    ]);
+    montarCardapio();
+    montarPratosEspeciais();
+    montarProdutosAvulsos();
+  }
+
+  async function buscarPrecos() {
+    const { data: exec } = await sb.from('config_preco').select('preco_executivo').eq('id', 1).single();
+    if (exec) precoExecutivo = exec.preco_executivo;
+
+    const { data: tamanhos } = await sb.from('marmitex_tamanhos').select('tamanho,preco');
+    if (tamanhos) {
+      precosMarmitex = {};
+      tamanhos.forEach(t => precosMarmitex[t.tamanho] = t.preco);
+    }
+  }
+
+  async function buscarCardapioHoje() {
+    const { data, error } = await sb.from('cardapio_hoje').select('id,nome,categoria').order('categoria').order('nome');
+    if (!error && data) cardapioHoje = data;
+  }
+
+  async function buscarPratosEspeciais() {
+    const { data, error } = await sb.from('pratos_especiais')
+      .select('id,nome,descricao,preco_p,preco_g,preco_divisorias')
+      .eq('ativo', true)
+      .order('ordem');
+    if (!error && data) pratosEspeciais = data;
+  }
+
+  async function buscarProdutosAvulsos() {
+    const { data, error } = await sb.from('produtos_avulsos')
+      .select('id,categoria,nome,preco,ordem_categoria,ordem_item')
+      .eq('ativo', true)
+      .order('ordem_categoria')
+      .order('ordem_item');
+    if (!error && data) produtosAvulsos = data;
+  }
+
+  document.getElementById('segmentoTipoVenda').addEventListener('click', (e) => {
+    const alvo = e.target.closest('.segmento');
+    if (!alvo) return;
+    document.querySelectorAll('#segmentoTipoVenda .segmento').forEach(el => el.classList.remove('ativo'));
+    alvo.classList.add('ativo');
+    tipoVendaAtual = alvo.dataset.valor;
+    atualizarVisibilidadePorTipo();
+  });
+
+  document.getElementById('segmentoTamanho').addEventListener('click', (e) => {
+    const alvo = e.target.closest('.segmento');
+    if (!alvo) return;
+    document.querySelectorAll('#segmentoTamanho .segmento').forEach(el => el.classList.remove('ativo'));
+    alvo.classList.add('ativo');
+    tamanhoAtual = alvo.dataset.valor;
+  });
+
+  function atualizarVisibilidadePorTipo() {
+    const blocoTamanho = document.getElementById('blocoTamanho');
+    const blocoMontar = document.getElementById('blocoMontarPrato');
+    const blocoEspeciais = document.getElementById('blocoPratosEspeciais');
+    const blocoAvulsos = document.getElementById('blocoProdutosAvulsos');
+    const cartaoObs = document.getElementById('cartaoObservacao');
+
+    if (tipoVendaAtual === 'executivo') {
+      blocoTamanho.classList.add('oculto');
+      blocoMontar.classList.remove('oculto');
+      blocoEspeciais.classList.add('oculto');
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
+    } else if (tipoVendaAtual === 'marmitex') {
+      blocoTamanho.classList.remove('oculto');
+      blocoMontar.classList.remove('oculto');
+      blocoEspeciais.classList.add('oculto');
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
+    } else if (tipoVendaAtual === 'especial') {
+      blocoTamanho.classList.remove('oculto');
+      blocoMontar.classList.add('oculto');
+      blocoEspeciais.classList.remove('oculto');
+      blocoAvulsos.classList.add('oculto');
+      cartaoObs.classList.remove('oculto');
+    } else {
+      blocoTamanho.classList.add('oculto');
+      blocoMontar.classList.add('oculto');
+      blocoEspeciais.classList.add('oculto');
+      blocoAvulsos.classList.remove('oculto');
+      cartaoObs.classList.add('oculto');
+    }
+  }
+
+  function montarCardapio() {
+    const container = document.getElementById('cardapioContainer');
+    container.innerHTML = '';
+    let algumItem = false;
+    CATEGORIA_ORDEM.forEach(cat => {
+      const itens = cardapioHoje.filter(i => i.categoria === cat);
+      if (itens.length === 0) return;
+      algumItem = true;
+      const titulo = document.createElement('div');
+      titulo.className = 'categoria-titulo';
+      titulo.textContent = CATEGORIA_LABEL[cat] || cat;
+      container.appendChild(titulo);
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+      itens.forEach(item => {
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (itensSelecionados.has(item.id) ? ' marcado' : '');
+        chip.textContent = item.nome;
+        chip.onclick = () => {
+          if (itensSelecionados.has(item.id)) itensSelecionados.delete(item.id);
+          else itensSelecionados.add(item.id);
+          chip.classList.toggle('marcado');
+        };
+        chips.appendChild(chip);
+      });
+      container.appendChild(chips);
+    });
+    if (!algumItem) {
+      container.innerHTML = '<p style="color:var(--alert); font-size:13.5px;">Nenhum item disponível hoje.</p>';
+    }
+  }
+
+  function montarPratosEspeciais() {
+    const container = document.getElementById('especiaisContainer');
+    container.innerHTML = '';
+    if (pratosEspeciais.length === 0) {
+      container.innerHTML = '<p style="color:var(--alert); font-size:13.5px;">Nenhum prato especial disponível hoje.</p>';
+      return;
+    }
+    pratosEspeciais.forEach((prato, index) => {
+      if (index === 0 && pratoEspecialSelecionadoId === null) pratoEspecialSelecionadoId = prato.id;
+      const card = document.createElement('div');
+      card.className = 'prato-especial-card' + (pratoEspecialSelecionadoId === prato.id ? ' marcado' : '');
+      card.innerHTML = `<div class="nome">${prato.nome}</div>` + (prato.descricao ? `<div class="desc">${prato.descricao}</div>` : '');
+      card.onclick = () => {
+        pratoEspecialSelecionadoId = prato.id;
+        document.querySelectorAll('.prato-especial-card').forEach(el => el.classList.remove('marcado'));
+        card.classList.add('marcado');
+      };
+      container.appendChild(card);
+    });
+  }
+
+  function montarProdutosAvulsos() {
+    const container = document.getElementById('avulsosPedidoContainer');
+    container.innerHTML = '';
+    if (produtosAvulsos.length === 0) {
+      container.innerHTML = '<p style="color:var(--alert); font-size:13.5px;">Nenhum produto disponível.</p>';
+      return;
+    }
+    const categoriasNaOrdem = [];
+    const porCategoria = {};
+    produtosAvulsos.forEach(item => {
+      if (!porCategoria[item.categoria]) { porCategoria[item.categoria] = []; categoriasNaOrdem.push(item.categoria); }
+      porCategoria[item.categoria].push(item);
+    });
+    categoriasNaOrdem.forEach(categoria => {
+      const titulo = document.createElement('div');
+      titulo.className = 'avulso-categoria-titulo';
+      titulo.textContent = categoria;
+      container.appendChild(titulo);
+      porCategoria[categoria].forEach(item => {
+        const qtd = quantidadesAvulsos[item.id] || 0;
+        const linha = document.createElement('div');
+        linha.className = 'avulso-item-linha';
+        linha.innerHTML = `
+          <div class="avulso-info">
+            <div class="avulso-nome">${item.nome}</div>
+            <div class="avulso-preco">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+          </div>
+          <div class="avulso-stepper">
+            <button type="button" class="menos">−</button>
+            <span class="avulso-qtd" id="avulso-qtd-${item.id}">${qtd}</span>
+            <button type="button" class="mais">+</button>
+          </div>
+        `;
+        linha.querySelector('.menos').onclick = () => alterarQuantidadeAvulso(item.id, -1);
+        linha.querySelector('.mais').onclick = () => alterarQuantidadeAvulso(item.id, 1);
+        container.appendChild(linha);
+      });
+    });
+  }
+
+  function alterarQuantidadeAvulso(itemId, delta) {
+    const atual = quantidadesAvulsos[itemId] || 0;
+    quantidadesAvulsos[itemId] = Math.max(0, atual + delta);
+    document.getElementById('avulso-qtd-' + itemId).textContent = quantidadesAvulsos[itemId];
+  }
+
+  function montarChipsObservacaoRapida() {
+    const container = document.getElementById('chipsObservacaoRapida');
+    container.innerHTML = '';
+    OBSERVACOES_RAPIDAS.forEach(texto => {
+      const chip = document.createElement('div');
+      chip.className = 'chip rapido';
+      chip.textContent = texto;
+      chip.onclick = () => {
+        const campo = document.getElementById('inputObservacao');
+        const atual = campo.value.trim();
+        campo.value = atual ? atual + ', ' + texto : texto;
+      };
+      container.appendChild(chip);
+    });
+  }
+
+  function precoDoPratoEspecial(pratoId, tamanho) {
+    const p = pratosEspeciais.find(x => x.id === pratoId);
+    if (!p) return 0;
+    if (tamanho === 'G') return p.preco_g;
+    if (tamanho === 'Divisorias') return p.preco_divisorias;
+    return p.preco_p;
+  }
+
+  function rotuloTamanho(tamanho) {
+    if (tamanho === 'G') return 'G';
+    if (tamanho === 'Divisorias') return 'Com divisórias';
+    return 'P';
+  }
+
+  function adicionarProdutosAvulsosAoCarrinho() {
+    const itensEscolhidos = produtosAvulsos.filter(p => (quantidadesAvulsos[p.id] || 0) > 0);
+    if (itensEscolhidos.length === 0) {
+      mostrarToast('Escolha ao menos um item (toque no +).', true);
+      return;
+    }
+    itensEscolhidos.forEach(item => {
+      const qtd = quantidadesAvulsos[item.id];
+      carrinho.push({
+        tipoVenda: 'avulso',
+        tamanho: null,
+        componentes: [],
+        pratoEspecialId: null,
+        pratoEspecialNome: null,
+        produtoAvulsoId: item.id,
+        produtoAvulsoNome: item.nome,
+        quantidade: qtd,
+        observacao: '',
+        preco: Number(item.preco) * qtd
+      });
+    });
+    mostrarToast(itensEscolhidos.length === 1 ? 'Item adicionado ao pedido.' : 'Itens adicionados ao pedido.');
+    quantidadesAvulsos = {};
+    montarProdutosAvulsos();
+  }
+
+  function adicionarOuSalvarPrato() {
+    if (tipoVendaAtual === 'avulso') {
+      adicionarProdutosAvulsosAoCarrinho();
+      return;
+    }
+    const observacao = document.getElementById('inputObservacao').value.trim();
+    let prato;
+    if (tipoVendaAtual === 'especial') {
+      if (!pratoEspecialSelecionadoId) { mostrarToast('Escolha um prato especial.', true); return; }
+      const especial = pratosEspeciais.find(p => p.id === pratoEspecialSelecionadoId);
+      prato = {
+        tipoVenda: 'especial',
+        tamanho: tamanhoAtual,
+        componentes: [],
+        pratoEspecialId: especial.id,
+        pratoEspecialNome: especial.nome,
+        observacao,
+        preco: precoDoPratoEspecial(especial.id, tamanhoAtual)
+      };
+    } else if (tipoVendaAtual === 'marmitex') {
+      const componentes = cardapioHoje.filter(i => itensSelecionados.has(i.id));
+      if (componentes.length === 0) { mostrarToast('Selecione ao menos um item do prato.', true); return; }
+      prato = {
+        tipoVenda: 'marmitex',
+        tamanho: tamanhoAtual,
+        componentes,
+        pratoEspecialId: null,
+        pratoEspecialNome: null,
+        observacao,
+        preco: precosMarmitex[tamanhoAtual] || 0
+      };
+    } else {
+      const componentes = cardapioHoje.filter(i => itensSelecionados.has(i.id));
+      if (componentes.length === 0) { mostrarToast('Selecione ao menos um item do prato.', true); return; }
+      prato = {
+        tipoVenda: 'executivo',
+        tamanho: null,
+        componentes,
+        pratoEspecialId: null,
+        pratoEspecialNome: null,
+        observacao,
+        preco: precoExecutivo
+      };
+    }
+    if (indiceEditando !== null) {
+      carrinho[indiceEditando] = prato;
+      mostrarToast('Prato atualizado.');
+    } else {
+      carrinho.push(prato);
+      mostrarToast('Prato adicionado ao pedido.');
+    }
+    resetarFormularioPrato();
+    montarCardapio();
+    montarPratosEspeciais();
+  }
+
+  function resetarFormularioPrato() {
+    indiceEditando = null;
+    document.getElementById('btnAdicionarPrato').textContent = 'Adicionar ao pedido';
+    document.getElementById('inputObservacao').value = '';
+    itensSelecionados = new Set();
+    pratoEspecialSelecionadoId = null;
+    tipoVendaAtual = 'executivo';
+    tamanhoAtual = 'P';
+    document.querySelectorAll('#segmentoTipoVenda .segmento').forEach(el => el.classList.remove('ativo'));
+    document.querySelector('#segmentoTipoVenda .segmento[data-valor="executivo"]').classList.add('ativo');
+    document.querySelectorAll('#segmentoTamanho .segmento').forEach(el => el.classList.remove('ativo'));
+    document.querySelector('#segmentoTamanho .segmento[data-valor="P"]').classList.add('ativo');
+    atualizarVisibilidadePorTipo();
+  }
+
+  function descricaoTipoVenda(prato) {
+    if (prato.tipoVenda === 'marmitex') return 'Marmitex ' + rotuloTamanho(prato.tamanho);
+    if (prato.tipoVenda === 'especial') return prato.pratoEspecialNome + ' — ' + rotuloTamanho(prato.tamanho);
+    if (prato.tipoVenda === 'avulso') return prato.quantidade + 'x ' + prato.produtoAvulsoNome;
+    return 'Executivo';
+  }
+
+  function mostrarResumo() {
+    if (carrinho.length === 0) { mostrarToast('Adicione ao menos um prato antes de continuar.', true); return; }
+    document.getElementById('etapaCardapio').classList.add('oculto');
+    document.getElementById('etapaResumo').classList.remove('oculto');
+    document.getElementById('textoIdentificadorResumo').textContent = 'Pedido: ' + identificador;
+    renderizarResumo();
+  }
+
+  function mostrarEtapaCardapio() {
+    document.getElementById('etapaResumo').classList.add('oculto');
+    document.getElementById('etapaCardapio').classList.remove('oculto');
+  }
+
+  function renderizarResumo() {
+    const container = document.getElementById('resumoContainer');
+    container.innerHTML = '';
+    carrinho.forEach((prato, index) => {
+      const linha = document.createElement('div');
+      linha.className = 'linha-resumo';
+      const componentesTexto = prato.componentes.length > 0
+        ? `<div class="componentes">${prato.componentes.map(c => c.nome).join(', ')}</div>` : '';
+      const obsTexto = prato.observacao ? `<div class="obs">Obs: ${prato.observacao}</div>` : '';
+      const botaoEditar = prato.tipoVenda === 'avulso' ? '' : '<button class="btn-mini editar">Editar</button>';
+      linha.innerHTML = `
+        <div class="titulo-prato"><span>${descricaoTipoVenda(prato)}</span><span>R$ ${Number(prato.preco).toFixed(2).replace('.', ',')}</span></div>
+        ${componentesTexto}
+        ${obsTexto}
+        <div class="acoes">
+          ${botaoEditar}
+          <button class="btn-mini remover">Remover</button>
+        </div>
+      `;
+      const btnEditar = linha.querySelector('.editar');
+      if (btnEditar) btnEditar.onclick = () => editarPrato(index);
+      linha.querySelector('.remover').onclick = () => removerPrato(index);
+      container.appendChild(linha);
+    });
+    const total = carrinho.reduce((soma, p) => soma + Number(p.preco), 0);
+    document.getElementById('textoTotal').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+  }
+
+  function editarPrato(index) {
+    const prato = carrinho[index];
+    indiceEditando = index;
+    document.getElementById('etapaResumo').classList.add('oculto');
+    document.getElementById('etapaCardapio').classList.remove('oculto');
+    tipoVendaAtual = prato.tipoVenda;
+    tamanhoAtual = prato.tamanho || 'P';
+    itensSelecionados = new Set(prato.componentes.map(c => c.id));
+    pratoEspecialSelecionadoId = prato.pratoEspecialId;
+    document.querySelectorAll('#segmentoTipoVenda .segmento').forEach(el => {
+      el.classList.toggle('ativo', el.dataset.valor === tipoVendaAtual);
+    });
+    document.querySelectorAll('#segmentoTamanho .segmento').forEach(el => {
+      el.classList.toggle('ativo', el.dataset.valor === tamanhoAtual);
+    });
+    atualizarVisibilidadePorTipo();
+    montarCardapio();
+    montarPratosEspeciais();
+    document.getElementById('inputObservacao').value = prato.observacao || '';
+    document.getElementById('btnAdicionarPrato').textContent = 'Salvar alteração';
+  }
+
+  function removerPrato(index) {
+    carrinho.splice(index, 1);
+    if (carrinho.length === 0) mostrarEtapaCardapio();
+    else renderizarResumo();
+  }
+
+  // ===== CUPOM PDF 40mm =====
+  function montarHtmlItensRecibo(itensCarrinho) {
+    const container = document.getElementById('reciboItens');
+    container.innerHTML = '';
+
+    itensCarrinho.forEach((prato, index) => {
+      const item = document.createElement('div');
+      item.className = 'recibo-item';
+
+      const topo = document.createElement('div');
+      topo.className = 'recibo-item-topo';
+
+      const esq = document.createElement('div');
+      esq.className = 'recibo-item-esq';
+
+      const check = document.createElement('span');
+      check.className = 'recibo-item-check';
+      check.textContent = '[ ]';
+
+      const desc = document.createElement('span');
+      desc.className = 'recibo-item-desc';
+      if (prato.tipoVenda === 'especial') {
+        desc.textContent = (prato.pratoEspecialNome || 'Especial') + ' (' + rotuloTamanho(prato.tamanho) + ')';
+      } else {
+        desc.textContent = descricaoTipoVenda(prato);
+      }
+
+      esq.appendChild(check);
+      esq.appendChild(desc);
+
+      const preco = document.createElement('span');
+      preco.className = 'recibo-item-preco';
+      preco.textContent = 'R$ ' + Number(prato.preco).toFixed(2).replace('.', ',');
+
+      topo.appendChild(esq);
+      topo.appendChild(preco);
+      item.appendChild(topo);
+
+      if (prato.componentes && prato.componentes.length) {
+        prato.componentes.forEach(c => {
+          const sub = document.createElement('div');
+          sub.className = 'recibo-item-sub';
+          const cCheck = document.createElement('span');
+          cCheck.className = 'recibo-item-check';
+          cCheck.textContent = '[ ]';
+          const cDesc = document.createElement('span');
+          cDesc.className = 'recibo-item-desc';
+          cDesc.textContent = c.nome;
+          sub.appendChild(cCheck);
+          sub.appendChild(cDesc);
+          item.appendChild(sub);
+        });
+      }
+
+      if (prato.observacao) {
+        const obs = document.createElement('div');
+        obs.className = 'recibo-item-sub';
+        obs.textContent = 'Obs: ' + prato.observacao;
+        item.appendChild(obs);
+      }
+
+      container.appendChild(item);
+
+      if (index < itensCarrinho.length - 1) {
+        const sep = document.createElement('div');
+        sep.className = 'recibo-linha tracejada';
+        container.appendChild(sep);
+      }
+    });
+  }
+
+  // Quebra texto para caber na largura útil do cupom (~36mm)
+  function pdfQuebrarTexto(pdf, texto, maxWidthMm, fontSize) {
+    pdf.setFontSize(fontSize);
+    const palavras = String(texto).split(/\s+/);
+    const linhas = [];
+    let atual = '';
+    palavras.forEach(p => {
+      const teste = atual ? atual + ' ' + p : p;
+      if (pdf.getTextWidth(teste) <= maxWidthMm) {
+        atual = teste;
+      } else {
+        if (atual) linhas.push(atual);
+        atual = p;
+      }
+    });
+    if (atual) linhas.push(atual);
+    return linhas.length ? linhas : [''];
+  }
+
+  function gerarPdfCupom40mm(identificadorPedido, itensCarrinho, totalPedido, dataFormatada, horaFormatada, rodapeTxt) {
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error('jsPDF não carregou');
+      }
+      const { jsPDF } = window.jspdf;
+      const LARGURA = 40;
+      const M = 2;
+      const UTIL = LARGURA - M * 2;
+
+      const medirEDesenhar = (alturaPagina) => {
+        const doc = new jsPDF({
+          unit: 'mm',
+          format: [LARGURA, alturaPagina],
+          orientation: 'portrait'
+        });
+        let y = M;
+
+        // Uma única marca no topo (sem repetir com logo em texto extra)
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(11);
+        doc.text('CASEIRINHO 261', LARGURA / 2, y + 4, { align: 'center' });
+        y += 6;
+        doc.setFontSize(7.5);
+        doc.setFont('courier', 'normal');
+        doc.text('COZINHA & BAR', LARGURA / 2, y, { align: 'center' });
+        y += 3.5;
+
+        doc.setLineWidth(0.4);
+        doc.line(M, y, LARGURA - M, y);
+        y += 3.5;
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(10);
+        pdfQuebrarTexto(doc, String(identificadorPedido), UTIL, 10).forEach(ln => {
+          doc.text(ln, LARGURA / 2, y, { align: 'center' });
+          y += 4;
+        });
+
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(8);
+        doc.text(dataFormatada + '  ' + horaFormatada, LARGURA / 2, y, { align: 'center' });
+        y += 3;
+
+        doc.setLineWidth(0.4);
+        doc.line(M, y, LARGURA - M, y);
+        y += 3.5;
+
+        itensCarrinho.forEach((prato, index) => {
+          let titulo;
+          if (prato.tipoVenda === 'especial') {
+            titulo = (prato.pratoEspecialNome || 'Especial') + ' (' + rotuloTamanho(prato.tamanho) + ')';
+          } else {
+            titulo = descricaoTipoVenda(prato);
+          }
+          const precoStr = 'R$ ' + Number(prato.preco).toFixed(2).replace('.', ',');
+
+          doc.setFont('courier', 'bold');
+          doc.setFontSize(8);
+          const precoW = doc.getTextWidth(precoStr);
+          const checkW = doc.getTextWidth('[ ] ');
+          const descMax = Math.max(10, UTIL - precoW - checkW - 1);
+          const descLinhas = pdfQuebrarTexto(doc, titulo, descMax, 8);
+
+          doc.text('[ ]', M, y);
+          doc.text(descLinhas[0] || '', M + checkW, y);
+          doc.text(precoStr, LARGURA - M, y, { align: 'right' });
+          y += 3.5;
+          for (let i = 1; i < descLinhas.length; i++) {
+            doc.text(descLinhas[i], M + checkW, y);
+            y += 3.2;
+          }
+
+          doc.setFont('courier', 'normal');
+          doc.setFontSize(7.5);
+          if (prato.componentes && prato.componentes.length) {
+            prato.componentes.forEach(c => {
+              const cLinhas = pdfQuebrarTexto(doc, c.nome, UTIL - checkW, 7.5);
+              doc.text('[ ]', M, y);
+              doc.text(cLinhas[0] || '', M + checkW, y);
+              y += 3;
+              for (let i = 1; i < cLinhas.length; i++) {
+                doc.text(cLinhas[i], M + checkW, y);
+                y += 3;
+              }
+            });
+          }
+          if (prato.observacao) {
+            pdfQuebrarTexto(doc, 'Obs: ' + prato.observacao, UTIL, 7.5).forEach(ln => {
+              doc.text(ln, M, y);
+              y += 3;
+            });
+          }
+
+          if (index < itensCarrinho.length - 1) {
+            doc.setLineDashPattern([1, 1], 0);
+            doc.setLineWidth(0.2);
+            doc.line(M, y, LARGURA - M, y);
+            doc.setLineDashPattern([], 0);
+            y += 3;
+          }
+        });
+
+        y += 1;
+        doc.setLineWidth(0.4);
+        doc.line(M, y, LARGURA - M, y);
+        y += 4;
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(10);
+        const totalStr = 'R$ ' + Number(totalPedido).toFixed(2).replace('.', ',');
+        doc.text('TOTAL', M, y);
+        doc.text(totalStr, LARGURA - M, y, { align: 'right' });
+        y += 3.5;
+
+        doc.setLineDashPattern([1, 1], 0);
+        doc.setLineWidth(0.25);
+        doc.line(M, y, LARGURA - M, y);
+        doc.setLineDashPattern([], 0);
+        y += 3.5;
+
+        doc.setFontSize(7);
+        pdfQuebrarTexto(doc, rodapeTxt, UTIL, 7).forEach(ln => {
+          doc.text(ln, LARGURA / 2, y, { align: 'center' });
+          y += 3;
+        });
+
+        return { doc, altura: y + M };
+      };
+
+      const medicao = medirEDesenhar(300);
+      const final = medirEDesenhar(Math.max(medicao.altura, 40));
+      const nome = 'cupom-' + String(identificadorPedido).replace(/\s+/g, '-').toLowerCase() + '.pdf';
+      final.doc.save(nome);
+      mostrarToast('PDF 40mm gerado.');
+      return true;
+    } catch (e) {
+      console.error(e);
+      mostrarToast('Não foi possível gerar o PDF.', true);
+      return false;
+    }
+  }
+
+  async function montarReciboEGerarPdf(identificadorPedido, itensCarrinho, totalPedido) {
+    const agora = new Date();
+    const dataFormatada = agora.toLocaleDateString('pt-BR');
+    const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const loginCurto = emailGarcomLogado || 'garcom';
+    const rodapeTxt = '[' + loginCurto + '] - [' + dataFormatada + '] [' + horaFormatada + ']';
+
+    ultimoCupom = {
+      identificador: identificadorPedido,
+      itens: itensCarrinho.slice(),
+      total: totalPedido,
+      data: dataFormatada,
+      hora: horaFormatada,
+      rodape: rodapeTxt
+    };
+
+    // Preview na tela (logo uma vez — só a imagem, sem texto extra)
+    document.getElementById('reciboIdentificador').textContent = identificadorPedido;
+    document.getElementById('reciboDataHora').textContent = dataFormatada + '  ' + horaFormatada;
+    montarHtmlItensRecibo(itensCarrinho);
+    document.getElementById('reciboTotalValor').textContent =
+      'R$ ' + Number(totalPedido).toFixed(2).replace('.', ',');
+    document.getElementById('reciboRodape').textContent = rodapeTxt;
+
+    const painel = document.getElementById('painelCupom');
+    if (painel) {
+      const slot = document.getElementById('previewCupomSlot');
+      const src = document.getElementById('reciboImprimir');
+      if (slot && src) {
+        slot.innerHTML = src.innerHTML;
+      }
+      painel.classList.remove('oculto');
+      setTimeout(() => painel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+
+    // PDF no tamanho do cupom (40mm x altura)
+    gerarPdfCupom40mm(
+      identificadorPedido,
+      itensCarrinho,
+      totalPedido,
+      dataFormatada,
+      horaFormatada,
+      rodapeTxt
+    );
+  }
+
+  function imprimirCupomTela() {
+    // Gera novamente o PDF no tamanho exato do cupom (40mm x altura)
+    if (!ultimoCupom) {
+      mostrarToast('Nenhum cupom disponível.', true);
+      return;
+    }
+    gerarPdfCupom40mm(
+      ultimoCupom.identificador,
+      ultimoCupom.itens,
+      ultimoCupom.total,
+      ultimoCupom.data,
+      ultimoCupom.hora,
+      ultimoCupom.rodape
+    );
+  }
+
+  function fecharPainelCupom() {
+    const painel = document.getElementById('painelCupom');
+    if (painel) painel.classList.add('oculto');
+  }
+
+  function mensagemErroBanco(err) {
+    if (!err) return 'Erro desconhecido';
+    if (typeof err === 'string') return err;
+    return err.message || err.details || err.hint || err.code || JSON.stringify(err);
+  }
+
+  async function fecharPedido() {
+    const btn = document.getElementById('btnFecharPedido');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    try {
+      const total = carrinho.reduce((s, p) => s + Number(p.preco), 0);
+      const itensSnapshot = carrinho.slice();
+      const idSnapshot = identificador;
+
+      // MODO TESTE: não grava no banco — só gera o cupom PDF
+      if (modoTesteAtivo) {
+        mostrarToast('Modo teste: gerando cupom PDF…');
+        await montarReciboEGerarPdf(idSnapshot, itensSnapshot, total);
+        setTimeout(() => {
+          carrinho = [];
+          identificador = '';
+          quantidadesAvulsos = {};
+          document.getElementById('inputIdentificador').value = '';
+          document.getElementById('etapaResumo').classList.add('oculto');
+          document.getElementById('etapaCardapio').classList.add('oculto');
+          document.getElementById('etapaIdentificacao').classList.remove('oculto');
+        }, 600);
+        return;
+      }
+
+      const orderId = crypto.randomUUID();
+
+      const { error: erroPedido } = await sb.from('orders')
+        .insert({ id: orderId, identificador: idSnapshot, status: 'fechado', total });
+      if (erroPedido) throw erroPedido;
+
+      for (const prato of itensSnapshot) {
+        const pratoId = crypto.randomUUID();
+        const { error: erroPrato } = await sb.from('order_pratos')
+          .insert({
+            id: pratoId,
+            order_id: orderId,
+            tipo_venda: prato.tipoVenda,
+            tamanho: prato.tamanho,
+            quantidade: prato.quantidade || 1,
+            preco_unitario: prato.preco,
+            observacao: prato.observacao,
+            prato_especial_id: prato.pratoEspecialId,
+            prato_especial_nome: prato.pratoEspecialNome,
+            produto_avulso_id: prato.produtoAvulsoId || null,
+            produto_avulso_nome: prato.produtoAvulsoNome || null
+          });
+        if (erroPrato) throw erroPrato;
+
+        if (prato.componentes && prato.componentes.length > 0) {
+          const itens = prato.componentes.map(c => ({
+            order_prato_id: pratoId,
+            menu_item_id: c.id,
+            nome: c.nome
+          }));
+          const { error: erroItens } = await sb.from('order_prato_itens').insert(itens);
+          if (erroItens) throw erroItens;
+        }
+      }
+
+      mostrarToast('Pedido enviado para a cozinha!');
+      await montarReciboEGerarPdf(idSnapshot, itensSnapshot, total);
+
+      setTimeout(() => {
+        carrinho = [];
+        identificador = '';
+        quantidadesAvulsos = {};
+        document.getElementById('inputIdentificador').value = '';
+        document.getElementById('etapaResumo').classList.add('oculto');
+        document.getElementById('etapaCardapio').classList.add('oculto');
+        document.getElementById('etapaIdentificacao').classList.remove('oculto');
+      }, 800);
+
+    } catch (err) {
+      console.error(err);
+      mostrarToast('Erro ao enviar pedido: ' + mensagemErroBanco(err), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Fechar pedido';
+    }
+  }
+
+  function mostrarToast(msg, erro) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = erro ? 'show erro' : 'show';
+    setTimeout(() => { t.className = t.className.replace('show', '').trim(); }, 2800);
+  }
+</script>
+
+</body>
+</html>
